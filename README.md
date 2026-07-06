@@ -10,6 +10,88 @@ every boundary, which makes it a sharp teaching case.
 > two models in play are independent: **Claude Code is the coding agent** that writes the specs and
 > the code; **the API it builds calls an OpenAI model (`gpt-5.5`) at runtime.**
 
+## Quick start
+
+```bash
+# 1. Install dependencies
+uv sync --extra dev
+
+# 2. Set your OpenAI key
+cp .env.example .env
+# edit .env and set OPENAI_API_KEY=sk-...
+
+# 3. Run the server
+uv run uvicorn summarizer_service.main:app --reload
+
+# 4. Call the endpoint
+curl -X POST http://localhost:8000/summarize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Spec-Driven Development (SDD) is a software engineering discipline that inverts the typical AI-assisted workflow. Instead of prompting an agent to write code directly, the developer first produces a precise specification: a requirements table with numbered acceptance criteria, an interface contract defining exact request and response shapes, a constraints section listing what is explicitly out of scope, and an architecture document mapping every module to its responsibility. Only once these artifacts are approved does the agent proceed — first to a plan that traces each requirement to a file and a function, then to an ordered task list where each task has a testable done-when condition, and finally to implementation. The result is that the agent cannot guess wrong: every boundary condition is named, every edge case has a test, and every deviation from the spec is immediately visible. SDD also produces a living audit trail — the spec, plan, and tasks remain in the repository and serve as the ground truth against which future changes are verified.",
+    "max_words": 60
+  }'
+```
+
+The response looks like:
+
+```json
+{
+  "summary": "A concise summary of your text.",
+  "word_count": 7,
+  "model": "gpt-5.5",
+  "request_id": "3f2a1b4c-..."
+}
+```
+
+Every response also carries an `X-Request-ID` header matching the `request_id` in the body.
+
+## Running the tests
+
+```bash
+uv run pytest summarizer_service/tests/ -v
+```
+
+All 15 tests should pass. No live OpenAI call is ever made — the client is mocked via FastAPI's
+`dependency_overrides`.
+
+```bash
+# Lint and format check
+uv run ruff check .
+uv run ruff format --check .
+```
+
+## API reference
+
+### `POST /summarize`
+
+| Field | Type | Default | Notes |
+|-------|------|---------|-------|
+| `text` | `string` | required | 1–10,000 characters; whitespace-only rejected |
+| `max_words` | `integer` | `150` | Soft target passed to the model; range 1–1,000 |
+
+**Status codes**
+
+| Code | Meaning |
+|------|---------|
+| `200` | Summary returned |
+| `413` | `text` exceeds 10,000 characters |
+| `422` | Empty, whitespace-only, or otherwise invalid body |
+| `502` | OpenAI call failed or timed out |
+
+Every non-200 response body is `{"error": "<message>", "request_id": "<uuid>"}`.
+
+### Environment variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `OPENAI_API_KEY` | yes | — | Injected as `SecretStr`; never logged |
+| `MODEL` | no | `gpt-5.5` | OpenAI model name |
+| `TIMEOUT_S` | no | `30` | Per-request timeout in seconds |
+| `MAX_INPUT_CHARS` | no | `10000` | Hard cap on `text` length |
+| `MAX_RETRIES` | no | `1` | Retries on transient network errors |
+
+---
+
 ## The core idea
 
 > Building software with AI agents isn't about writing code anymore. It's about writing a
@@ -63,6 +145,5 @@ The agent never touches code until Constitution, Specify, and Plan are complete 
 
 ## Status
 
-The specification stack is complete and the **Tasks** section (`spec.md` §6) is ready to implement
-task-by-task. No application code has been written yet — by design, this repo demonstrates the part
-*before* the agent starts typing.
+Implementation complete. The full spec (§1–§6) and all application code live in this repo.
+15 tests pass, covering every acceptance criterion R1–R9. No live OpenAI calls in the test suite.
