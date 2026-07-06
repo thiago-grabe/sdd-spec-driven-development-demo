@@ -45,7 +45,7 @@ Files: <list>
 `PayloadTooLargeError` and `SummarizerError`. Neither carries user text or raw upstream messages.
 
 **T4 — Settings**
-`BaseSettings` fields: `openai_api_key: SecretStr`, `model: str = "gpt-5.5"`, `timeout_s: int = 30`, `max_input_chars: int = 10_000`, `max_retries: int = 1`. Use `@lru_cache` on `get_settings()`.
+`BaseSettings` fields: `openai_api_key: SecretStr`, `model: str = "gpt-5.5"`, `timeout_s: int = 30`, `max_input_chars: int = 10_000`, `max_retries: int = 1`. Use `@lru_cache` on `get_settings()`. Add `model_config = SettingsConfigDict(env_file=".env")` so pydantic-settings loads the `.env` file at runtime — without this, only shell-exported env vars are read and the server crashes with a missing-field validation error.
 
 **T5 — Logger**
 `log_request(*, request_id, input_length, status_code, latency_ms, model=None, error_class=None)`. Never a `text` parameter. Log at INFO/WARNING/ERROR by status range.
