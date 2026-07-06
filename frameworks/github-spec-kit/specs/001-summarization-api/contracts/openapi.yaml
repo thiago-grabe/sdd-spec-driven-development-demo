@@ -1,0 +1,87 @@
+openapi: 3.1.0
+info:
+  title: Summarization API
+  version: 1.0.0
+  description: >
+    A single endpoint that returns a concise summary of a block of text from one model call.
+    Stateless; the submitted text is never logged or persisted.
+paths:
+  /summarize:
+    post:
+      operationId: summarize
+      summary: Summarize a block of text
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SummarizeRequest"
+      responses:
+        "200":
+          description: Summary produced.
+          headers:
+            X-Request-ID:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SummarizeResponse"
+        "413":
+          description: Text exceeds the 10,000-character cap. No model call was made.
+          headers:
+            X-Request-ID:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Empty or whitespace-only text. No model call was made.
+          headers:
+            X-Request-ID:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Upstream model error or timeout. No provider internals are exposed.
+          headers:
+            X-Request-ID:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    SummarizeRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          description: Text to summarize. Hard cap of 10,000 chars enforced as 413 by the route.
+        max_words:
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 1000
+          default: 150
+          description: Soft target for summary length.
+    SummarizeResponse:
+      type: object
+      required: [summary, word_count, model, request_id]
+      properties:
+        summary: { type: string }
+        word_count: { type: integer }
+        model: { type: string }
+        request_id: { type: string }
+    ErrorResponse:
+      type: object
+      required: [error, request_id]
+      properties:
+        error:
+          type: string
+          description: Human-safe message. Never contains internals or the submitted text.
+        request_id: { type: string }

@@ -1,0 +1,14 @@
+schema: spec-driven
+context: |
+  Service: a single POST /summarize HTTP endpoint that wraps exactly one OpenAI call.
+  Tech stack: Python 3.12, FastAPI, Pydantic v2, openai SDK, uvicorn. Package manager: uv.
+  Testing: pytest + httpx TestClient; the OpenAI client is always mocked (no live calls in CI).
+  Privacy: never log, trace, return, or persist the user's submitted text. Secrets from env only.
+  The service is stateless: no DB, no cache, no sessions.
+rules:
+  proposal:
+    - Focus on the why; keep it to 1-2 pages. Implementation detail belongs in design.md.
+  specs:
+    - Use SHALL/MUST for normative requirements, never "should".
+    - Every requirement MUST have at least one scenario.
+    - Scenario headers MUST use exactly four hashtags (####).

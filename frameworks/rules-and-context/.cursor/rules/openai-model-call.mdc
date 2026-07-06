@@ -1,0 +1,18 @@
+---
+description: How to make the single OpenAI model call — timeout, retry, prompt, and privacy rules. Pull this in whenever writing or changing the summarizer or any code that calls the model.
+alwaysApply: false
+---
+
+# The one OpenAI call (agent-requested)
+
+This is the "Agent Requested" rule type: it has a `description` (and no `globs`), so the agent reads
+the description and decides whether to pull the rule in. Invoked for model-call work.
+
+- Make **exactly one** `client.chat.completions.create(...)` call per request, with a **30-second
+  timeout** and **at most one** bounded retry on a transient network error.
+- Model is `gpt-5.5`. Build messages as a system prompt + the user's text; fold `max_words` into the
+  system prompt as a soft target (default 150, range 1–1000).
+- Read the API key from `OPENAI_API_KEY` in the environment. Never hard-code, return, or log it.
+- On any provider error or timeout, raise `SummarizerError` (text-free message) so the boundary maps
+  it to a **502** — never retry unbounded, never swallow into a 200.
+- Never put the caller's text into a log line, a trace, or an exception message.

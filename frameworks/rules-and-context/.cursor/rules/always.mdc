@@ -1,0 +1,17 @@
+---
+alwaysApply: true
+---
+
+# Project conventions (always in context)
+
+These apply to every request in this repo. This is the "Always" rule type (`alwaysApply: true`).
+
+- Stack: Python 3.12, FastAPI, Pydantic v2, the official `openai` SDK, `uv`, `pytest`, `ruff`.
+- We are building one endpoint: `POST /summarize` → a concise summary from **exactly one** OpenAI call.
+- Type-hint every function. No bare `dict` crosses an API boundary — use Pydantic models.
+- Errors are typed and mapped to status codes at the HTTP boundary. Never `except Exception: pass`,
+  never return a 200 that hides a failure.
+- **Never log the user's text**, and never hard-code, return, or log `OPENAI_API_KEY`. Log metadata only.
+- Definition of done: `ruff check` + `ruff format` clean, every behavior covered by a test, tests
+  mock the model client (no live calls), OpenAPI matches the contract.
+- See @AGENTS.md for the full behavior contract and guardrails.

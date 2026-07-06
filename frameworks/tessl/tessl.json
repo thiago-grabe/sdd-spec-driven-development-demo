@@ -1,0 +1,14 @@
+{
+  "name": "summarization-service",
+  "dependencies": {
+    "tessl-labs/spec-driven-development": "2.0.1"
+  },
+  "tiles": {
+    "tessl/pypi-fastapi": {
+      "describes": "pkg:pypi/fastapi"
+    },
+    "tessl/pypi-openai": {
+      "describes": "pkg:pypi/openai"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+
+# Release checklist (manual)
+
+This is the "Manual" rule type: no `description`, no `globs`, `alwaysApply: false`. It enters context
+only when you `@`-mention it in chat (`@release-checklist`). Use it before calling a change done.
+
+- [ ] `uv run ruff check` and `uv run ruff format --check` are clean.
+- [ ] `uv run pytest` is green with **no** network access (model client mocked).
+- [ ] Every behavior verified: `200` happy path, `422` empty (no call), `413` oversize (no call),
+      `502` upstream failure, `word_count` matches, `X-Request-ID` on every response.
+- [ ] Privacy test passes: a seeded marker in the input appears in **no** log record and **no** error body.
+- [ ] Generated OpenAPI schema matches the contract in @AGENTS.md.
+- [ ] No drift: the conventions in @AGENTS.md still describe the shipped behavior.

@@ -1,0 +1,66 @@
+## ADDED Requirements
+
+### Requirement: Summarize Text
+The system SHALL accept a block of text via `POST /summarize` and return a concise summary produced
+by exactly one model call, as JSON containing the summary, its word count, the model identifier, and
+a request identifier.
+
+#### Scenario: Successful summarization
+- **GIVEN** a request body with non-empty `text`
+- **WHEN** the client calls `POST /summarize`
+- **THEN** the system returns `200` with a body containing `summary`, `word_count`, `model`, and
+  `request_id`
+
+#### Scenario: Word count matches the summary
+- **WHEN** a summary is returned
+- **THEN** `word_count` equals the number of whitespace-separated words in `summary`
+
+#### Scenario: Optional length target is honored
+- **GIVEN** a request that includes `max_words`
+- **WHEN** the summary is produced
+- **THEN** `max_words` is passed to the model as a soft target
+
+### Requirement: Reject Invalid Input Without a Model Call
+The system SHALL reject empty/whitespace text and oversize text before invoking the model.
+
+#### Scenario: Empty or whitespace text
+- **WHEN** `POST /summarize` is called with empty or whitespace-only `text`
+- **THEN** the system returns `422` and makes no model call
+
+#### Scenario: Oversize text
+- **WHEN** `POST /summarize` is called with `text` longer than 10,000 characters
+- **THEN** the system returns `413` and makes no model call
+
+### Requirement: Handle Upstream Failure Safely
+The system SHALL map any model error or timeout to a typed error without exposing provider internals.
+
+#### Scenario: Model error or timeout
+- **GIVEN** the upstream model errors or exceeds the 30-second timeout
+- **WHEN** the request is processed
+- **THEN** the system returns `502` with a body containing `error` and `request_id`, and no stack
+  trace, raw provider error, or submitted text appears in the response
+
+### Requirement: Single Bounded Model Invocation
+The system SHALL invoke the model exactly once per successful request, with at most one bounded retry
+on a transient network error counted as part of that single invocation.
+
+#### Scenario: Exactly one logical call
+- **WHEN** a valid request succeeds
+- **THEN** exactly one logical call to the model client is made
+
+### Requirement: Never Log User Text
+The system SHALL NOT record the submitted text in any log, trace, error message, or stored artifact;
+logging SHALL be limited to metadata. Provider credentials SHALL be read from the environment and
+SHALL NOT be hard-coded, returned, or logged.
+
+#### Scenario: Submitted text is never logged
+- **GIVEN** a request whose `text` contains a unique marker string
+- **WHEN** the request is processed on any path (success or failure)
+- **THEN** the marker appears in no log record and no response body
+
+### Requirement: Request Identity on Every Response
+The system SHALL attach a `request_id` to every response and expose it as the `X-Request-ID` header.
+
+#### Scenario: Identity on success and error
+- **WHEN** any response is returned, whether success or error
+- **THEN** the body contains `request_id` and the `X-Request-ID` header is set

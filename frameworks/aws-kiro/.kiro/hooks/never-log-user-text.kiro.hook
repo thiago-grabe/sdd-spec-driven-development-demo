@@ -1,0 +1,16 @@
+{
+  "name": "never-log-user-text",
+  "version": "1.0.0",
+  "enabled": true,
+  "description": "On edits to source files, verify the caller's text and the API key never reach logs or responses.",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.py"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A source file was just saved. Review the change against the privacy guardrails in .kiro/steering/tech.md and requirements 5.1-5.3: the caller's `text` must never be logged, traced, or returned in an error body, and OPENAI_API_KEY must never be hard-coded, returned, or logged. If any log/return statement could expose user text or the key, flag the exact line and propose a metadata-only fix."
+  }
+}

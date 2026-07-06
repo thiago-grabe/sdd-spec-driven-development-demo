@@ -1,0 +1,20 @@
+---
+globs: src/**/*.py, tests/**/*.py
+alwaysApply: false
+---
+
+# Python / FastAPI patterns (auto-attached)
+
+This is the "Auto Attached" rule type — it enters context when a matching Python file (per the
+comma-separated `globs`) is referenced or edited.
+
+- Keep modules single-responsibility: models in `models/schemas.py`, the one model call in
+  `services/summarizer.py`, HTTP concerns in `api/`. Dependencies point inward.
+- Inject the OpenAI client through a FastAPI dependency; never construct it inside a route so tests
+  can pass a mock without monkey-patching.
+- Map domain exceptions to status codes in `api/errors.py` (`PayloadTooLargeError`→413,
+  validation→422, `SummarizerError`→502). Return `ErrorResponse(error, request_id)` — no stack traces.
+- Validate with Pydantic v2 `Field` constraints; enforce the 10k-char cap as a route-level 413, not a
+  `max_length` (which would wrongly surface as a 422).
+- Every test mocks the model client. See @src/summarizer_service/services/summarizer.py for the
+  canonical one-call wrapper.
